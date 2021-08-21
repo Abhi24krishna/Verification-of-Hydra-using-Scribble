@@ -1,0 +1,67 @@
+module HydraV5;
+
+type  <java> "java.lang.Integer" from "rt.jar" as Int;
+type  <java> "java.lang.String" from "rt.jar" as String;
+
+global protocol HydraV5(role C, role L, role S, role Q, role O){
+    rec W{
+        verificationfile(String) from O to S;
+        setupconfig(String) from S to L;
+        query(String) from L to S;
+        choice at S{
+            filename(String) from S to L;
+            file(String) from L to C;
+            RequestID(Int) from C to S;
+            AssignID(Int) from S to C;
+            rec X{
+                StartNewJob(String) from C to S;
+                RequestJob(String) from S to Q;
+                reply(String) from Q to S;
+                choice at S{
+                    ReplyYes(String) from S to C;
+                    rec Y{
+                        choice at C{
+                            split(String) from C to S;
+                            storepartition(String) from S to Q;
+                            replyQ2S(String) from Q to S;
+			    
+                        }or{
+                            outcomeOK(String) from C to S;
+                            deque(String) from S to Q;
+                            reply(String) from Q to S;
+                            
+                        }or{
+                            outcomeNOK(String) from C to S;
+                            restart(String) from S to L;
+                            reply(String) from L to S;
+                            empty(String) from S to Q;
+                            reply2(String) from Q to S;
+                            Stop(String) from S to O;
+                        }
+                    }
+                }or{
+                    Idle(String) from S to C;
+                    reply(String) from S to O;
+                    continue W;
+                }or{
+		            HaveJob(String) from S to C;
+                    Timeout(String) from S to L;
+                    reset(String) from L to C;
+                    clearall(String) from C to L;
+                    done(String) from L to S;
+                    empty(String) from S to Q;
+                    reply2(String) from Q to S;
+                    Time(String) from S to O;
+                }
+            }
+        }or{
+            Timeout(String) from S to L;
+            reset(String) from L to C;
+            clearall(String) from C to L;
+            done(String) from L to S;
+            empty(String) from S to Q;
+            reply2(String) from Q to S;
+            Time(String) from S to O;
+        }
+    }
+}
